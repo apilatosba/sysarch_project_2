@@ -54,7 +54,7 @@ paint_start:
    # } else if (s3 == 'd') {
    #    move right
    # } else if (s3 == ' ') {
-   #    set color to current pixel
+   #    set pixel to current color
    # } else if (s3 == 'r') {
    #    flip red
    # } else if (s3 == 'g') {
@@ -158,7 +158,7 @@ paint_start:
    lw       a6,  88(sp)
    lw       a7,  92(sp)
 	addi    sp,  sp,  128
-   # ret // ? idk
+   ret // ? idk
 
 
 # wait_until_terminal_is_ready:
