@@ -9,6 +9,8 @@ _start:
    la t1, user_systemcalls
    csrw mepc, t1
 
+   # li sp, 0xffff
+
    mret                            # return to user mode
 
 exception_handler:
