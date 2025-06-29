@@ -97,6 +97,290 @@ exception_handler:
    csrr t1, mepc
    sw t1, 124(t0)
 
-   # TODO: identify cause of exception (ecall? which one?)
+   li sp, 0xffff // so i can use the stack to store some data in the functions
+
+   # : identify cause of exception (ecall? which one?)
+
+   // s0 = the process id to mret to. even in early returns
+
+   # if (!ecall) {
+   #    return;
+   # }
+
+   # if (exec) {
+   #    do exec stuff
+   # } else if(exit) {
+   #    do exit stuff
+   # }
+
+   li t0, 1088 // PROCESS_ID_ADDRESS
+   lw s0, 0(t0) // in case of early return return to the process
+
+   csrr t0, mcause
+   srli t1, t0, 31
+   bne t1, x0, exception_handler_return // if mcause[31] == 1 then its an interrupt and i ignore it
+   li t1, 8
+   bne t0, t1, exception_handler_return // if mcause != 8 then its not a system call and i ignore it
+
+   mv a0, s0
+   jal ra, get_pcb_address_from_process_id
+   lw a7, 64(a0)
+
+   li t0, 221
+   beq a7, t0, exception_handler_if_exec
+   li t0, 93
+   beq a7, t0, exception_handler_if_exit
+   j exception_handler_if_end
+
+   exception_handler_if_exec:
+   lw a1, 40(a0)
+   lw a0, 36(a0)
+   jal ra, do_exec
+
+   # if (return value == -1) {
+   #    a0 = -1
+   #    do mret
+   # }
+
+   // this is where i was left off
+
+
+   j exception_handler_if_end
+   exception_handler_if_exit:
+   j exception_handler_if_end
+   exception_handler_if_end:
+
    # TODO: update time to completion for the process that caused the exception
-   # TODO: schedule next process
+
+   # : schedule next process
+   // at this point i assume s0 has the process id to mret to
+   exception_handler_return:
+   li t0, 1088 // PROCESS_ID_ADDRESS
+   lw s0, 0(t0)
+
+   mv a0, s0
+   jal ra, get_pcb_address_from_process_id
+
+   // mepc = pcbs[process_id].pc
+   lw t0, 124(a0)
+   csrw mepc, t0
+
+   lw x1, 0(a0)
+   lw x2, 4(a0)
+   lw x3, 8(a0)
+   lw x4, 12(a0)
+   lw x5, 16(a0)
+   lw x6, 20(a0)
+   lw x7, 24(a0)
+   lw x8, 28(a0)
+   lw x9, 32(a0)
+   # lw x10, 36(a0) // x10 is a0 do it at the end
+   lw x11, 40(a0)
+   lw x12, 44(a0)
+   lw x13, 48(a0)
+   lw x14, 52(a0)
+   lw x15, 56(a0)
+   lw x16, 60(a0)
+   lw x17, 64(a0)
+   lw x18, 68(a0)
+   lw x19, 72(a0)
+   lw x20, 76(a0)
+   lw x21, 80(a0)
+   lw x22, 84(a0)
+   lw x23, 88(a0)
+   lw x24, 92(a0)
+   lw x25, 96(a0)
+   lw x26, 100(a0)
+   lw x27, 104(a0)
+   lw x28, 108(a0)
+   lw x29, 112(a0)
+   lw x30, 116(a0)
+   lw x31, 120(a0)
+   lw x10, 36(a0)
+
+   mret
+
+
+// a0 = process id
+// a0 return value
+get_pcb_address_from_process_id:
+   // return PCB_SIZE * a0 + PCB_ADDRESS
+   li t0, 136 // PCB_SIZE
+   mul a0, a0, t0
+   addi a0, a0, 0x0 // PCB_ADDRESS
+   ret
+
+// a0 = pc
+// a1 = estimated time to completion
+// a0 return value. if -1 then no more processes can be added
+do_exec:
+   addi sp, sp, -32
+   sw ra, 0(sp)
+   sw s0, 4(sp)
+   sw s1, 8(sp)
+   sw s2, 12(sp)
+   sw s3, 16(sp)
+   sw s4, 20(sp)
+   sw s5, 24(sp)
+   sw s6, 28(sp)
+
+   mv s0, a0 // pc
+   mv s1, a1 // estimated time to completion
+
+   jal ra, get_unused_process_id
+
+   # if (a0 == -1) {
+   #    return -1;
+   # }
+
+   li t0, -1
+   beq a0, t0, do_exec_if_all_occupied
+   j do_exec_if_all_occupied_end
+
+   do_exec_if_all_occupied:
+   li a0, -1
+   j do_exec_return
+   do_exec_if_all_occupied_end:
+
+   // pcbs[new_process_id].registers = pcbs[current_process_id].registers
+
+   // s2 = new_process_id pcb address
+   jal ra, get_pcb_address_from_process_id
+   mv s2, a0
+
+   // s3 = current_process_id pcb address
+   li t0, 1088 // PROCESS_ID_ADDRESS
+   lw a0, 0(t0)
+   jal ra, get_pcb_address_from_process_id
+   mv s3, a0
+
+   lw t0, 0(s3)
+   sw t0, 0(s2) // x1
+   lw t0, 4(s3)
+   sw t0, 4(s2) // x2
+   lw t0, 8(s3)
+   sw t0, 8(s2) // x3
+   lw t0, 12(s3)
+   sw t0, 12(s2) // x4
+   lw t0, 16(s3)
+   sw t0, 16(s2) // x5
+   lw t0, 20(s3)
+   sw t0, 20(s2) // x6
+   lw t0, 24(s3)
+   sw t0, 24(s2) // x7
+   lw t0, 28(s3)
+   sw t0, 28(s2) // x8
+   lw t0, 32(s3)
+   sw t0, 32(s2) // x9
+   lw t0, 36(s3)
+   sw t0, 36(s2) // x10
+   lw t0, 40(s3)
+   sw t0, 40(s2) // x11
+   lw t0, 44(s3)
+   sw t0, 44(s2) // x12
+   lw t0, 48(s3)
+   sw t0, 48(s2) // x13
+   lw t0, 52(s3)
+   sw t0, 52(s2) // x14
+   lw t0, 56(s3)
+   sw t0, 56(s2) // x15
+   lw t0, 60(s3)
+   sw t0, 60(s2) // x16
+   lw t0, 64(s3)
+   sw t0, 64(s2) // x17
+   lw t0, 68(s3)
+   sw t0, 68(s2) // x18
+   lw t0, 72(s3)
+   sw t0, 72(s2) // x19
+   lw t0, 76(s3)
+   sw t0, 76(s2) // x20
+   lw t0, 80(s3)
+   sw t0, 80(s2) // x21
+   lw t0, 84(s3)
+   sw t0, 84(s2) // x22
+   lw t0, 88(s3)
+   sw t0, 88(s2) // x23
+   lw t0, 92(s3)
+   sw t0, 92(s2) // x24
+   lw t0, 96(s3)
+   sw t0, 96(s2) // x25
+   lw t0, 100(s3)
+   sw t0, 100(s2) // x26
+   lw t0, 104(s3)
+   sw t0, 104(s2) // x27
+   lw t0, 108(s3)
+   sw t0, 108(s2) // x28
+   lw t0, 112(s3)
+   sw t0, 112(s2) // x29
+   lw t0, 116(s3)
+   sw t0, 116(s2) // x30
+   lw t0, 120(s3)
+   sw t0, 120(s2) // x31
+
+   // pcbs[new_process_id].isOccupied = 1
+   li t0, 1
+   sw t0, 132(s2)
+
+   // pcbs[new_process_id].remainingCycles = estimated time to completion
+   sw s1, 128(s2)
+
+   // pcbs[new_process_id].pc = pc
+   sw s0, 124(s2)
+
+   mv a0, x0 // so that is it not -1
+
+   do_exec_return:
+   lw ra, 0(sp)
+   lw s0, 4(sp)
+   lw s1, 8(sp)
+   lw s2, 12(sp)
+   lw s3, 16(sp)
+   lw s4, 20(sp)
+   lw s5, 24(sp)
+   lw s6, 28(sp)
+   addi sp, sp, 32
+   ret
+
+// a0 return value. -1 if all occupied
+get_unused_process_id:
+   addi sp, sp, -16
+   sw ra, 0(sp)
+   sw s0, 4(sp)
+   sw s1, 8(sp)
+   sw s2, 12(sp)
+
+   # for (int i = 0; i < MAX_PROCESS_COUNT; i++) {
+   #    if (!pcbs[i].isOccupied) {
+   #       return i;
+   #    }
+   # }
+
+   # return -1;
+
+   // s0 = i
+   li s0, 0
+   j get_unused_process_id_for_loop_condition
+
+   get_unused_process_id_for_loop_begin:
+   mv a0, s0
+   jal ra, get_pcb_address_from_process_id
+   lw t0, 132(a0)
+
+   mv a0, s0 // in case of return
+   bne t0, x0, get_unused_process_id_return
+
+   // i++
+   addi s0, s0, 1
+   get_unused_process_id_for_loop_condition:
+   li t0, 8 // MAX_PROCESS_COUNT
+   ble s0, t0, get_unused_process_id_for_loop_begin
+
+   li a0, -1
+
+   get_unused_process_id_return:
+   lw ra, 0(sp)
+   lw s0, 4(sp)
+   lw s1, 8(sp)
+   lw s2, 12(sp)
+   addi sp, sp, 16
+   ret
