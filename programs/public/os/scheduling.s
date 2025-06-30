@@ -741,3 +741,4 @@ subtract_64_bit:
    ret
 
 shutdown:
+   j shutdown
