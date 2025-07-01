@@ -9,40 +9,41 @@ _start:
    la t1, user_systemcalls
    csrw mepc, t1
 
-   # li sp, 0xffff
-
    mret                            # return to user mode
 
 exception_handler:
    # : save registers you need to handle the exception
-   addi   sp, sp, -128
-	sw     ra,  60(sp)
-	sw     t0,  56(sp)
-	sw     t1,  52(sp)
-	sw     t2,  48(sp)
-	sw     t3,  44(sp)
-	sw     t4,  40(sp)
-	sw     t5,  36(sp)
-	sw     t6,  32(sp)
-   sw     s2,  28(sp)
-   sw     s3,  24(sp)
-   sw     s4,  20(sp)
-   sw     s5,  16(sp)
-   sw     s6,  12(sp)
-   sw     s7,  8(sp)
-   sw     s8,  4(sp)
-   sw     s9,  0(sp)
-   sw     a0,  64(sp)
-   sw     a1,  68(sp)
-   sw     a2,  72(sp)
-   sw     a3,  76(sp)
-   sw     a4,  80(sp)
-   sw     a5,  84(sp)
-   sw     a6,  88(sp)
-   sw     a7,  92(sp)
+   # addi   sp, sp, -128
+	sw     ra,  60(x0)
+	sw     t0,  56(x0)
+	sw     t1,  52(x0)
+	sw     t2,  48(x0)
+	sw     t3,  44(x0)
+	sw     t4,  40(x0)
+	sw     t5,  36(x0)
+	sw     t6,  32(x0)
+   sw     s2,  28(x0)
+   sw     s3,  24(x0)
+   sw     s4,  20(x0)
+   sw     s5,  16(x0)
+   sw     s6,  12(x0)
+   sw     s7,  8(x0)
+   sw     s8,  4(x0)
+   sw     s9,  0(x0)
+   sw     a0,  64(x0)
+   sw     a1,  68(x0)
+   sw     a2,  72(x0)
+   sw     a3,  76(x0)
+   sw     a4,  80(x0)
+   sw     a5,  84(x0)
+   sw     a6,  88(x0)
+   sw     a7,  92(x0)
+   sw     sp, 96(x0)
+
+   li sp, 0xffff
 
    mv s0, a0
-   csrw mepc, ra
+   # csrw mepc, ra
 
    # : check the cause of the exception
    # t0 = mcause
@@ -76,35 +77,36 @@ exception_handler:
 
    # : restore registers you saved and return to user mode
    exception_handler_return:
-   # csrr t0, mepc
-   # addi t0, t0, 4
-   # csrw mepc, t0
+   csrr t0, mepc
+   addi t0, t0, 4
+   csrw mepc, t0
 
-	lw       ra,  60(sp)
-	lw       t0,  56(sp)
-	lw       t1,  52(sp)
-	lw       t2,  48(sp)
-	lw       t3,  44(sp)
-	lw       t4,  40(sp)
-	lw       t5,  36(sp)
-	lw       t6,  32(sp)
-   lw       s2,  28(sp)
-   lw       s3,  24(sp)
-   lw       s4,  20(sp)
-   lw       s5,  16(sp)
-   lw       s6,  12(sp)
-   lw       s7,  8(sp)
-   lw       s8,  4(sp)
-   lw       s9,  0(sp)
-   lw       a0,  64(sp)
-   lw       a1,  68(sp)
-   lw       a2,  72(sp)
-   lw       a3,  76(sp)
-   lw       a4,  80(sp)
-   lw       a5,  84(sp)
-   lw       a6,  88(sp)
-   lw       a7,  92(sp)
-	addi    sp,  sp,  128
+	lw       ra,  60(x0)
+	lw       t0,  56(x0)
+	lw       t1,  52(x0)
+	lw       t2,  48(x0)
+	lw       t3,  44(x0)
+	lw       t4,  40(x0)
+	lw       t5,  36(x0)
+	lw       t6,  32(x0)
+   lw       s2,  28(x0)
+   lw       s3,  24(x0)
+   lw       s4,  20(x0)
+   lw       s5,  16(x0)
+   lw       s6,  12(x0)
+   lw       s7,  8(x0)
+   lw       s8,  4(x0)
+   lw       s9,  0(x0)
+   lw       a0,  64(x0)
+   lw       a1,  68(x0)
+   lw       a2,  72(x0)
+   lw       a3,  76(x0)
+   lw       a4,  80(x0)
+   lw       a5,  84(x0)
+   lw       a6,  88(x0)
+   lw       a7,  92(x0)
+   lw       sp, 96(x0)
+	# addi    sp,  sp,  128
 
    mret
 
