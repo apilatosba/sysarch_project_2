@@ -39,31 +39,34 @@
 # this is what i see when i press 1
 
 paint_start:
-   addi   sp, sp, -128
-	sw     ra,  60(sp)
-	sw     t0,  56(sp)
-	sw     t1,  52(sp)
-	sw     t2,  48(sp)
-	sw     t3,  44(sp)
-	sw     t4,  40(sp)
-	sw     t5,  36(sp)
-	sw     t6,  32(sp)
-   sw     s2,  28(sp)
-   sw     s3,  24(sp)
-   sw     s4,  20(sp)
-   sw     s5,  16(sp)
-   sw     s6,  12(sp)
-   sw     s7,  8(sp)
-   sw     s8,  4(sp)
-   sw     s9,  0(sp)
-   sw     a0,  64(sp)
-   sw     a1,  68(sp)
-   sw     a2,  72(sp)
-   sw     a3,  76(sp)
-   sw     a4,  80(sp)
-   sw     a5,  84(sp)
-   sw     a6,  88(sp)
-   sw     a7,  92(sp)
+   # addi   sp, sp, -128
+	sw     ra,  60(x0)
+	sw     t0,  56(x0)
+	sw     t1,  52(x0)
+	sw     t2,  48(x0)
+	sw     t3,  44(x0)
+	sw     t4,  40(x0)
+	sw     t5,  36(x0)
+	sw     t6,  32(x0)
+   sw     s2,  28(x0)
+   sw     s3,  24(x0)
+   sw     s4,  20(x0)
+   sw     s5,  16(x0)
+   sw     s6,  12(x0)
+   sw     s7,  8(x0)
+   sw     s8,  4(x0)
+   sw     s9,  0(x0)
+   sw     a0,  64(x0)
+   sw     a1,  68(x0)
+   sw     a2,  72(x0)
+   sw     a3,  76(x0)
+   sw     a4,  80(x0)
+   sw     a5,  84(x0)
+   sw     a6,  88(x0)
+   sw     a7,  92(x0)
+   sw     sp, 96(x0)
+
+   li sp, 0xffff
 
    // (0, 0) top left
    // s0 = cursor x
@@ -306,7 +309,8 @@ paint_start:
    lw       a5,  84(sp)
    lw       a6,  88(sp)
    lw       a7,  92(sp)
-	addi    sp,  sp,  128
+   lw       sp, 96(x0)
+	# addi    sp,  sp,  128
    ret // ? idk
 
 
