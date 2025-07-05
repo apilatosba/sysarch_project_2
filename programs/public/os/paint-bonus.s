@@ -74,6 +74,7 @@ paint_start:
    // s2 = cursor color
    // s4 = state (read_from_1 or normal)
    // s5 = read_from_1 pointer. points to the current character in the read_from_1 buffer
+   // s6 = current underlying pixel color
 
    li t0, 15
    mv s0, t0
@@ -81,6 +82,20 @@ paint_start:
 
    li t0, 0x00ffffff // white
    mv s2, t0
+
+   // need to write the cursor color at start
+   # s6 = read_display(cursor_position);
+   # write_display(cursor_color, cursor_position);
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0,
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
 
    mv s4, x0 // (0 = normal, 1 = read_from_1)
    mv s5, x0 // not important. will be initilaized if "1" is pressed
@@ -150,6 +165,12 @@ paint_start:
    #    set s5 to 0x00010000
    # }
 
+   // on wasd i need to this:
+   # write_display(cursor_position, s6);
+   # update cursor position
+   # s6 = read_display(cursor_position);
+   # write_display(cursor_position, s2);
+
 
    // for input 1 maybe use a state and if state is read_from_1 then read from 0x00010000
    // and when you hit a null terminator switch state baack to normal
@@ -182,34 +203,95 @@ paint_start:
 
    paint_start_if_begin:
    paint_start_if_w:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
    addi s1, s1, -1
    mv a0, s1
    jal ra, clamp_0_31
    mv s1, a0
-   j paint_start_if_end
-   paint_start_if_s:
-   addi s1, s1, 1
-   mv a0, s1
-   jal ra, clamp_0_31
-   mv s1, a0
-   j paint_start_if_end
-   paint_start_if_a:
-   addi s0, s0, -1
+
    mv a0, s0
-   jal ra, clamp_0_31
-   mv s0, a0
-   j paint_start_if_end
-   paint_start_if_d:
-   addi s0, s0, 1
-   mv a0, s0
-   jal ra, clamp_0_31
-   mv s0, a0
-   j paint_start_if_end
-   paint_start_if_space:
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
    mv a0, s0
    mv a1, s1
    mv a2, s2
    jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_s:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
+   addi s1, s1, 1
+   mv a0, s1
+   jal ra, clamp_0_31
+   mv s1, a0
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_a:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
+   addi s0, s0, -1
+   mv a0, s0
+   jal ra, clamp_0_31
+   mv s0, a0
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_d:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
+   addi s0, s0, 1
+   mv a0, s0
+   jal ra, clamp_0_31
+   mv s0, a0
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_space:
+   mv s6, s2
+   # mv a0, s0
+   # mv a1, s1
+   # mv a2, s2
+   # jal ra, write_display
    j paint_start_if_end
    paint_start_if_r:
    li t0, 0x00ff0000
@@ -224,16 +306,18 @@ paint_start:
    xor s2, s2, t0
    j paint_start_if_end
    paint_start_if_p:
-   mv a0, s0
-   mv a1, s1
-   jal ra, read_display
-   mv s2, a0
+   mv s2, s6
+   # mv a0, s0
+   # mv a1, s1
+   # jal ra, read_display
+   # mv s2, a0
    j paint_start_if_end
    paint_start_if_m:
-   mv a0, s0
-   mv a1, s1
-   jal ra, read_display
-   // a0 = current pixel
+   # mv a0, s0
+   # mv a1, s1
+   # jal ra, read_display
+   # // a0 = current pixel
+   // s6 is now underlying pixel color
    // s2 = current color
    // t4 = new blue
    // t5 = new green
@@ -248,12 +332,12 @@ paint_start:
    slli a6, a5, 8
    slli a7, a5, 16
 
-   and t0, a0, a5
+   and t0, s6, a5
    and t1, s2, a5
    add t0, t0, t1
    srli t4, t0, 1
 
-   and t0, a0, a6
+   and t0, s6, a6
    and t1, s2, a6
    srli t0, t0, 8
    srli t1, t1, 8
@@ -261,7 +345,7 @@ paint_start:
    srli t0, t0, 1
    slli t5, t0, 8
 
-   and t0, a0, a7
+   and t0, s6, a7
    and t1, s2, a7
    srli t0, t0, 16
    srli t1, t1, 16
@@ -280,6 +364,15 @@ paint_start:
    j paint_start_if_end
    paint_start_if_end:
 
+   # if(cursor color changed) {
+   #    write_display(cursor_position, cursor_color);
+   # }
+
+   // i dont do the if check
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
 
 # : wait for next keyboard input
    j paint_start_loop_begin

@@ -32,6 +32,7 @@ paint_start:
    // s0 = cursor x
    // s1 = cursor y
    // s2 = cursor color
+   // s6 = current underlying pixel color
 
    li t0, 15
    mv s0, t0
@@ -39,6 +40,20 @@ paint_start:
 
    li t0, 0x00ffffff // white
    mv s2, t0
+
+   // need to write the cursor color at start
+   # s6 = read_display(cursor_position);
+   # write_display(cursor_color, cursor_position);
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0,
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
 
    paint_start_loop_begin:
 # : wait for keyboard input
@@ -66,6 +81,12 @@ paint_start:
    #    flip blue
    # }
 
+   // on wasd i need to this:
+   # write_display(cursor_position, s6);
+   # update cursor position
+   # s6 = read_display(cursor_position);
+   # write_display(cursor_position, s2);
+
    li t0, 119 // w
    beq s3, t0, paint_start_if_w
    li t0, 115 // s
@@ -88,34 +109,95 @@ paint_start:
 
    paint_start_if_begin:
    paint_start_if_w:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
    addi s1, s1, -1
    mv a0, s1
    jal ra, clamp_0_31
    mv s1, a0
-   j paint_start_if_end
-   paint_start_if_s:
-   addi s1, s1, 1
-   mv a0, s1
-   jal ra, clamp_0_31
-   mv s1, a0
-   j paint_start_if_end
-   paint_start_if_a:
-   addi s0, s0, -1
+
    mv a0, s0
-   jal ra, clamp_0_31
-   mv s0, a0
-   j paint_start_if_end
-   paint_start_if_d:
-   addi s0, s0, 1
-   mv a0, s0
-   jal ra, clamp_0_31
-   mv s0, a0
-   j paint_start_if_end
-   paint_start_if_space:
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
    mv a0, s0
    mv a1, s1
    mv a2, s2
    jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_s:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
+   addi s1, s1, 1
+   mv a0, s1
+   jal ra, clamp_0_31
+   mv s1, a0
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_a:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
+   addi s0, s0, -1
+   mv a0, s0
+   jal ra, clamp_0_31
+   mv s0, a0
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_d:
+   mv a0, s0
+   mv a1, s1
+   mv a2, s6
+   jal ra, write_display
+
+   addi s0, s0, 1
+   mv a0, s0
+   jal ra, clamp_0_31
+   mv s0, a0
+
+   mv a0, s0
+   mv a1, s1
+   jal ra, read_display
+   mv s6, a0
+
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
+   j paint_start_if_end
+   paint_start_if_space:
+   mv s6, s2
+   # mv a0, s0
+   # mv a1, s1
+   # mv a2, s2
+   # jal ra, write_display
    j paint_start_if_end
    paint_start_if_r:
    li t0, 0x00ff0000
@@ -131,6 +213,15 @@ paint_start:
    j paint_start_if_end
    paint_start_if_end:
 
+   # if(cursor color changed) {
+   #    write_display(cursor_position, cursor_color);
+   # }
+
+   // i dont do the if check
+   mv a0, s0
+   mv a1, s1
+   mv a2, s2
+   jal ra, write_display
 
 # : wait for next keyboard input
    j paint_start_loop_begin
